@@ -29,5 +29,6 @@ build = {
     ["kong.plugins.qos-classifier.counter"] = "kong/plugins/qos-classifier/counter.lua",
     ["kong.plugins.qos-classifier.window"] = "kong/plugins/qos-classifier/window.lua",
     ["kong.plugins.qos-classifier.nodes_updater"] = "kong/plugins/qos-classifier/nodes_updater.lua",
+    ["kong.plugins.qos-classifier.prometheus"] = "kong/plugins/qos-classifier/prometheus.lua",
   }
 }

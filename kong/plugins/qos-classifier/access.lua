@@ -4,29 +4,9 @@ local kong = kong
 local set_header = kong.service.request.set_header
 
 local window = require 'kong.plugins.qos-classifier.window'
-
--- Import prometheus if it is availaible
-local prometheus = nil
-local prometheus_metrics = {}
-
-
-do 
-  local ok 
-  local prometheus_exp
-  prometheus_exp = require 'kong.plugins.prometheus.exporter'
-  ok, prometheus = pcall(prometheus_exp.get_prometheus,{})
-  if not ok then 
-    kong.log.warn("Failed to import Prometheus. Make sure you are using Kong > 2.6.0", prometheus)
-  else 
-    prometheus_metrics.rps = prometheus:gauge("qos_requests_per_second",
-                                              "Incoming requests per second",
-                                              {"class", "route","service"})
-    prometheus_metrics.threshold = prometheus:gauge("qos_request_threshold",
-                                              "Threshold for QoS class differentiation",
-                                              {"class", "route","service"})
-  end
-end
-
+-- Prometheus is imported and used if availaible in the current version
+local prometheus_importer = require 'kong.plugins.qos-classifier.prometheus'
+local prometheus, prometheus_metrics = prometheus_importer.get_prometheus_if_available()
 
 
 -- computes the class of the request and returns the appropriate header
