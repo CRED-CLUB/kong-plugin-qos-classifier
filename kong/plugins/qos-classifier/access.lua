@@ -16,7 +16,7 @@ do
   prometheus_exp = require 'kong.plugins.prometheus.exporter'
   ok, prometheus = pcall(prometheus_exp.get_prometheus,{})
   if not ok then 
-    kong.log.err("Failed to import Prometheus. Make sure you are using Kong > 2.6.0", prometheus)
+    kong.log.warn("Failed to import Prometheus. Make sure you are using Kong > 2.6.0", prometheus)
   else 
     prometheus_metrics.rps = prometheus:gauge("qos_requests_per_second",
                                               "Incoming requests per second",
