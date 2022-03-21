@@ -8,7 +8,6 @@ local window = require 'kong.plugins.qos-classifier.window'
 local prometheus_importer = require 'kong.plugins.qos-classifier.prometheus'
 local prometheus, prometheus_metrics = prometheus_importer.get_prometheus_if_available()
 
-
 -- computes the class of the request and returns the appropriate header
 -- value along with a boolean field to indicate if the request should
 -- be throttled, once all limits are breached
@@ -27,9 +26,15 @@ local function get_class(class_conf, value, num_nodes)
 end
 
 local function get_scope(plugin_conf)
-  local service_id = plugin_conf.service_id or "global"
-  local route_id = plugin_conf.route_id or "global"
+  -- fetch information about service and router from the router 
+  local service = kong.router.get_service()
+  local route = kong.router.get_route()
+
+  local service_id = service.name or service.id
+  local route_id = route.name or route.id
+
   local scope = (plugin_conf.service_id or plugin_conf.route_id) or 'global'
+  
   return scope, service_id, route_id
 end
 
@@ -41,7 +46,7 @@ function _M.execute(plugin_conf, num_nodes)
 
   -- get the weighted request count in the window
   local req_count = window:get_usage(curr_time, scope)
-
+  
   -- get the value of the header as defined for this class of request
   -- also check if the request breaches all limits and should be throttled
   local header_value, should_terminate, class_threshold =
