@@ -16,8 +16,8 @@ function _M.get_prometheus_if_available()
         kong.log.warn("Failed to import Prometheus. Make sure you are using Kong > 2.6.0", prometheus)
         prometheus = nil
     else 
-        prometheus_metrics.rps = prometheus:gauge("qos_requests_per_second",
-                                                    "Incoming requests per second",
+        prometheus_metrics.total_requests = prometheus:counter("qos_total_requests",
+                                                    "Total requests received so far",
                                                     {"class", "route","service"})
         prometheus_metrics.threshold = prometheus:gauge("qos_request_threshold",
                                                     "Threshold for QoS class differentiation",

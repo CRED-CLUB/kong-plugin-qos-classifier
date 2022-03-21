@@ -49,8 +49,8 @@ function _M.execute(plugin_conf, num_nodes)
 
   -- Set prometheus metrics 
   if prometheus then
-    prometheus_metrics.rps:set(req_count,{header_value,route_id, service_id})
-    prometheus_metrics.threshold:set(class_threshold,{header_value,route_id, service_id})
+    prometheus_metrics.total_requests:inc(1, {header_value, route_id, service_id})
+    prometheus_metrics.threshold:set(class_threshold, {header_value, route_id, service_id})
   end 
 
   -- Check rate_limiting state 
