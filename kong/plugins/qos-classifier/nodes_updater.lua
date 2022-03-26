@@ -4,9 +4,7 @@ local kong = kong
 local ngx_now = ngx.now
 local qos_shm = ngx.shared.qos_shared
 local json = require "cjson"
-local socket = require "socket"
-local http = require "socket.http"
-local ltn12 = require "ltn12"
+local httpc = require "resty.http"
 local resty_lock = require "resty.lock"
 local config = require 'kong.plugins.qos-classifier.config'
 
@@ -33,25 +31,18 @@ local function handle_response(response_code, response_body)
 end
 
 local function http_request(url, timeout)
+  local client = httpc.new()
+  client:set_timeout(timeout)
   kong.log.notice("making http request")
-  local response_body = {} -- for the response body
-
-  local _, response_code, _, _ = http.request {
+  local res, err = client:request_uri(url, {
     method = "GET",
-    url = url,
-    headers = {["content-type"] = "application/json"},
-    sink = ltn12.sink.table(response_body),
-    create = function()
-      local req_sock = socket.tcp()
-      req_sock:settimeout(timeout, "t")
-      req_sock:setoption("keepalive", true)
-      return req_sock
-    end
-  }
-
-  -- get body as string by concatenating table filled by sink
-  response_body = table.concat(response_body)
-  return handle_response(response_code, response_body)
+    headers = {["Content-Type"] = "application/json"}
+  })
+  if not res then
+    kong.log.err("http request failed ", err)
+    return 0, false
+  end
+  return handle_response(res.status, res.body)
 end
 
 local function fetch(url, timeout) return http_request(url, timeout) end
