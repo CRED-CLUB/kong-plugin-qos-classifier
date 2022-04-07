@@ -63,7 +63,6 @@ function _M.new(shdict_name, sync_interval)
     if not timer_started[shdict_name] then
       ngx.log(ngx.DEBUG, "start timer for shdict ", shdict_name, " on worker ",
               id)
-      if not init_ttl then init_ttl = 0 end
       ngx.timer.every(sync_interval, sync, self)
       timer_started[shdict_name] = true
     end
