@@ -63,37 +63,6 @@ function _M.new(shdict_name, sync_interval)
     if not timer_started[shdict_name] then
       ngx.log(ngx.DEBUG, "start timer for shdict ", shdict_name, " on worker ",
               id)
-      if not init_ttl then init_ttl = 0 end
-      ngx.timer.every(sync_interval, sync, self)
-      timer_started[shdict_name] = true
-    end
-  end
-
-  return self
-end
-
-function _M.new(shdict_name, sync_interval)
-  id = ngx.worker.id()
-
-  if not ngx_shared[shdict_name] then
-    error("shared dict \"" .. (shdict_name or "nil") .. "\" not defined", 2)
-  end
-
-  if not increments[shdict_name] then increments[shdict_name] = {} end
-
-  local self = setmetatable({
-    dict = ngx_shared[shdict_name],
-    increments = increments[shdict_name]
-  }, mt)
-
-  if sync_interval then
-    sync_interval = tonumber(sync_interval)
-    if not sync_interval or sync_interval < 0 then
-      error("expect sync_interval to be a positive number", 2)
-    end
-    if not timer_started[shdict_name] then
-      ngx.log(ngx.DEBUG, "start timer for shdict ", shdict_name, " on worker ",
-              id)
       ngx.timer.every(sync_interval, sync, self)
       timer_started[shdict_name] = true
     end
