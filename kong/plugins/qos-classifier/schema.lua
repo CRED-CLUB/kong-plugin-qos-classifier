@@ -2,7 +2,7 @@ local typedefs = require "kong.db.schema.typedefs"
 
 local request_class_record = {
   type = "record",
-  fields = {{threshold = {type = "number"}}, {header_value = {type = "string"}}}
+  fields = {{threshold = {type = "number", gt = 0}}, {header_value = {type = "string"}}}
 }
 
 local schema = {
@@ -48,6 +48,7 @@ local schema = {
                   http_timeout_in_ms = {
                     type = "integer",
                     required = true,
+                    gt = 0,
                     default = 10
                   }
                 },
@@ -55,12 +56,14 @@ local schema = {
                   update_frequency_in_sec = {
                     type = "integer",
                     required = true,
+                    gt = 0,
                     default = 1
                   }
                 }, {
                   update_initial_delay_in_sec = {
                     type = "integer",
                     required = true,
+                    gt = 0,
                     default = 15
                   }
                 }
