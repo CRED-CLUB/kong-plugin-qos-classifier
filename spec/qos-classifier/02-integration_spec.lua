@@ -4,6 +4,21 @@ local cjson = require "cjson"
 local PLUGIN_NAME = "qos-classifier"
 local MAX_REQUESTS = 25
 
+local config = {
+  termination = { 
+      status_code = 302,
+      header_name= "Location",
+      header_value="https://cred.club"
+  },
+  upstream_header_name = "X-QOS-CLASS",
+  node_count = {
+      http_timeout_in_ms = 15,
+      update_initial_delay_in_sec = 5,
+      initial = 1,
+      update_frequency_in_sec = 1
+  }
+}
+
 local function make_class(green, orange, red)
   classes = {
     class_1 = {
@@ -22,20 +37,17 @@ local function make_class(green, orange, red)
   return classes
 end
 
-local config = {
-    termination = { 
-        status_code = 302,
-        header_name= "Location",
-        header_value="https://cred.club"
-    },
-    upstream_header_name = "X-QOS-CLASS",
-    node_count = {
-        http_timeout_in_ms = 15,
-        update_initial_delay_in_sec = 5,
-        initial = 1,
-        update_frequency_in_sec = 1
-    }
-}
+local function make_requests_to_upstream(host, start_time)
+  local client
+  while true do
+    client = helpers.proxy_client()
+    assert(client:get("/get", {
+      headers = { Host = host },
+    }))
+    ngx.sleep(0.01)
+    if(ngx.now() - start_time > 1.2) then break end
+  end
+end
 
 for _, strategy in helpers.each_strategy() do
   describe(PLUGIN_NAME .. ": (integration) [#" .. strategy .. "]", function()
@@ -122,16 +134,8 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check for termination", function()
       local now = ngx.now()
-      local client
-      while true do
-        client = helpers.proxy_client()
-        assert(client:get("/get", {
-          headers = { Host = "test1.com" },
-        }))
-        ngx.sleep(0.01)
-        if(ngx.now() - now > 1.2) then break end
-      end
-      client = helpers.proxy_client()
+      make_requests_to_upstream("test1.com", now)
+      local client = helpers.proxy_client()
       local res = client:get("/get", {
         headers = { Host = "test1.com" },
       })
@@ -140,16 +144,8 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check Red Header", function()
       local now = ngx.now()
-      local client
-      while true do
-        client = helpers.proxy_client()
-        assert(client:get("/get", {
-          headers = { Host = "test2.com" },
-        }))
-        ngx.sleep(0.01)
-        if(ngx.now() - now > 1.2) then break end
-      end
-      client = helpers.proxy_client()
+      make_requests_to_upstream("test2.com", now)
+      local client = helpers.proxy_client()
       local res = client:get("/get", {
         headers = { Host = "test2.com" },
       })
@@ -160,16 +156,8 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check Orange Header", function()
       local now = ngx.now()
-      local client
-      while true do
-        client = helpers.proxy_client()
-        assert(client:get("/get", {
-          headers = { Host = "test3.com" },
-        }))
-        ngx.sleep(0.01)
-        if(ngx.now() - now > 1.2) then break end
-      end
-      client = helpers.proxy_client()
+      make_requests_to_upstream("test3.com", now)
+      local client = helpers.proxy_client()
       local res = client:get("/get", {
         headers = { Host = "test3.com" },
       })
@@ -180,16 +168,8 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check Green Header", function()
       local now = ngx.now()
-      local client
-      while true do
-        client = helpers.proxy_client()
-        assert(client:get("/get", {
-          headers = { Host = "test4.com" },
-        }))
-        ngx.sleep(0.01)
-        if(ngx.now() - now > 1.2) then break end
-      end
-      client = helpers.proxy_client()
+      make_requests_to_upstream("test4.com", now)
+      local client = helpers.proxy_client()
       local res = client:get("/get", {
         headers = { Host = "test4.com" },
       })
