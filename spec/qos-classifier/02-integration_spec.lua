@@ -2,7 +2,6 @@ local helpers = require "spec.helpers"
 local cjson = require "cjson"
 
 local PLUGIN_NAME = "qos-classifier"
-local MAX_REQUESTS = 25
 
 local config = {
   termination = { 
