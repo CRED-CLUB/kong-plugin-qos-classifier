@@ -2,6 +2,25 @@ local helpers = require "spec.helpers"
 local cjson = require "cjson"
 
 local PLUGIN_NAME = "qos-classifier"
+local MAX_REQUESTS = 25
+
+local function make_class(green, orange, red)
+  classes = {
+    class_1 = {
+      threshold = green,
+      header_value = "Green"
+    },
+    class_2 = {
+      threshold = orange,
+      header_value = "Orange"
+    },
+    class_3 = {
+      threshold = red,
+      header_value = "Red"
+    }
+  }
+  return classes
+end
 
 local config = {
     termination = { 
@@ -15,26 +34,11 @@ local config = {
         update_initial_delay_in_sec = 5,
         initial = 1,
         update_frequency_in_sec = 1
-    },
-    classes = {
-        class_1 = {
-            threshold = 1,
-            header_value = "Green"
-        },
-        class_2 = {
-            threshold = 3,
-            header_value = "Orange"
-        },
-        class_3 = {
-            threshold = 6,
-            header_value = "Red"
-        }
     }
 }
 
 for _, strategy in helpers.each_strategy() do
   describe(PLUGIN_NAME .. ": (integration) [#" .. strategy .. "]", function()
-    local proxy_client, admin_client
     local bp, db
   
     lazy_setup(function()
@@ -46,10 +50,51 @@ for _, strategy in helpers.each_strategy() do
         service = service,
       }
 
-      -- Enable Plugin on Service Level
+      local route2 = bp.routes:insert {
+        hosts   = {  "test2.com" },
+        service = service,
+      }
+
+      local route3 = bp.routes:insert {
+        hosts   = {  "test3.com" },
+        service = service,
+      }
+
+      local route4 = bp.routes:insert {
+        hosts   = {  "test4.com" },
+        service = service,
+      }
+
+      -- Enable Plugin on to check termination
+      config.classes = make_class(1,2,3)
       assert(bp.plugins:insert{
         name = PLUGIN_NAME,
-        config = config
+        route = route1,
+        config = config 
+      })
+
+      -- Enable Plugin on to check header_value = Red
+      config.classes = make_class(1,2,1000)
+      assert(bp.plugins:insert{
+        name = PLUGIN_NAME,
+        route = route2,
+        config = config 
+      })
+
+      -- Enable Plugin on to check header_value = Orange
+      config.classes = make_class(1,1000,1001)
+      assert(bp.plugins:insert{
+        name = PLUGIN_NAME,
+        route = route3,
+        config = config 
+      })
+
+      -- Enable Plugin on to check header_value = Green
+      config.classes = make_class(1000,1001,1002)
+      assert(bp.plugins:insert{
+        name = PLUGIN_NAME,
+        route = route4,
+        config = config 
       })
 
       -- Start kong
@@ -74,14 +119,84 @@ for _, strategy in helpers.each_strategy() do
       if proxy_client then proxy_client:close() end
       if admin_client then admin_client:close() end
     end)
-  
-    it("Check header using /get endpoint", function()
-      local res = proxy_client:get("/get", {
+
+    it("Check for termination", function()
+      local now = ngx.now()
+      local client
+      while true do
+        client = helpers.proxy_client()
+        assert(client:get("/get", {
+          headers = { Host = "test1.com" },
+        }))
+        ngx.sleep(0.01)
+        if(ngx.now() - now > 1.2) then break end
+      end
+      client = helpers.proxy_client()
+      local res = client:get("/get", {
         headers = { Host = "test1.com" },
       })
-      local body = assert.res_status(200, res)
-      local json = cjson.decode(body)
+      assert.res_status(302, res)
+    end)
+
+    it("Check Red Header", function()
+      local now = ngx.now()
+      local client
+      while true do
+        client = helpers.proxy_client()
+        assert(client:get("/get", {
+          headers = { Host = "test2.com" },
+        }))
+        ngx.sleep(0.01)
+        if(ngx.now() - now > 1.2) then break end
+      end
+      client = helpers.proxy_client()
+      local res = client:get("/get", {
+        headers = { Host = "test2.com" },
+      })
+      body = assert.res_status(200, res)
+      json = cjson.decode(body)
+      assert.are.same("Red", json.headers["x-qos-class"])
+    end)
+
+    it("Check Orange Header", function()
+      local now = ngx.now()
+      local client
+      while true do
+        client = helpers.proxy_client()
+        assert(client:get("/get", {
+          headers = { Host = "test3.com" },
+        }))
+        ngx.sleep(0.01)
+        if(ngx.now() - now > 1.2) then break end
+      end
+      client = helpers.proxy_client()
+      local res = client:get("/get", {
+        headers = { Host = "test3.com" },
+      })
+      body = assert.res_status(200, res)
+      json = cjson.decode(body)
+      assert.are.same("Orange", json.headers["x-qos-class"])
+  end)
+
+    it("Check Green Header", function()
+      local now = ngx.now()
+      local client
+      while true do
+        client = helpers.proxy_client()
+        assert(client:get("/get", {
+          headers = { Host = "test4.com" },
+        }))
+        ngx.sleep(0.01)
+        if(ngx.now() - now > 1.2) then break end
+      end
+      client = helpers.proxy_client()
+      local res = client:get("/get", {
+        headers = { Host = "test4.com" },
+      })
+      body = assert.res_status(200, res)
+      json = cjson.decode(body)
       assert.are.same("Green", json.headers["x-qos-class"])
     end)
+
 end)
 end
