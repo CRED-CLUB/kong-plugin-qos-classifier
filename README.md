@@ -54,7 +54,7 @@ The plugin can be enabled at `service`, `route` or `global` levels. In case of m
 
 ## Configuring the plugin
 
-The plugin has the following configuraion object:
+The plugin has the following configuration object:
 ```
 {
   "config": {
