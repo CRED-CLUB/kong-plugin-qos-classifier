@@ -6,13 +6,12 @@ version = "0.1.0-1"
 supported_platforms = {"linux", "macosx"}
 
 source = {
-  url = "http://github.com/Kong/kong-plugin.git",
+  url = "https://github.com/CRED-CLUB/kong-plugin-qos-classifier",
   tag = "0.1.0"
 }
 
 description = {
-  summary = "Plugin to classify requests based on the rps received",
-  homepage = "http://getkong.org",
+  summary = "Plugin to classify requests based on the req/s thresholds",
   license = "Apache 2.0"
 }
 
