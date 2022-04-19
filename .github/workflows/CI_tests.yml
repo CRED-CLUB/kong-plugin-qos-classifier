@@ -25,8 +25,4 @@ jobs:
       - name: Build 
         run: |
           git clone https://github.com/Kong/kong-pongo.git ../kong-pongo
-          ../kong-pongo/pongo.sh clean && ../kong-pongo/pongo.sh up && ../kong-pongo/pongo.sh build
-      
-      - name: Tests 
-        run: |
-          ../kong-pongo/pongo.sh lint && ../kong-pongo/pongo.sh run && 
+          ../kong-pongo/pongo.sh clean && ../kong-pongo/pongo.sh up && ../kong-pongo/pongo.sh build && ../kong-pongo/pongo.sh run
