@@ -18,7 +18,7 @@ local config = {
   }
 }
 
-local function make_class(green, orange, red)
+local function set_classes_with_thresholds(green, orange, red)
   classes = {
     class_1 = {
       threshold = green,
@@ -77,7 +77,7 @@ for _, strategy in helpers.each_strategy() do
       }
 
       -- Enable Plugin on to check termination
-      config.classes = make_class(1,2,3)
+      config.classes = set_classes_with_thresholds(1,2,3)
       assert(bp.plugins:insert{
         name = PLUGIN_NAME,
         route = route1,
@@ -85,7 +85,7 @@ for _, strategy in helpers.each_strategy() do
       })
 
       -- Enable Plugin on to check header_value = Red
-      config.classes = make_class(1,2,1000)
+      config.classes = set_classes_with_thresholds(1,2,1000)
       assert(bp.plugins:insert{
         name = PLUGIN_NAME,
         route = route2,
@@ -93,7 +93,7 @@ for _, strategy in helpers.each_strategy() do
       })
 
       -- Enable Plugin on to check header_value = Orange
-      config.classes = make_class(1,1000,1001)
+      config.classes = set_classes_with_thresholds(1,1000,1001)
       assert(bp.plugins:insert{
         name = PLUGIN_NAME,
         route = route3,
@@ -101,7 +101,7 @@ for _, strategy in helpers.each_strategy() do
       })
 
       -- Enable Plugin on to check header_value = Green
-      config.classes = make_class(1000,1001,1002)
+      config.classes = set_classes_with_thresholds(1000,1001,1002)
       assert(bp.plugins:insert{
         name = PLUGIN_NAME,
         route = route4,
