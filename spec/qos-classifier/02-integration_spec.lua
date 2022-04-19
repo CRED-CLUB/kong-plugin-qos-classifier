@@ -47,7 +47,17 @@ local function make_requests_to_upstream(host, start_time)
     assert(client:get("/get", {
       headers = { Host = host },
     }))
+    
+    -- Make requests to upstream in every 10 ms to avoid
+    -- getting blocked by nginx for making infinite requests
     ngx.sleep(0.01)
+
+    -- QoS Classifier Plugin returns header on the basis
+    -- of requests received in the previous second. Previous
+    -- second is a absolute window which starts as soon as
+    -- kong node starts. i.e. Start time of kong node is T=0.
+    -- Therefore, 1.2 seconds is used as a window to ensure
+    -- that the upstream is hit in the complete window.
     if(ngx.now() - start_time > 1.2) then break end
   end
 end
