@@ -123,11 +123,11 @@ for _, strategy in helpers.each_strategy() do
       })
 
       -- Start kong
-      assert(helpers.start_kong({
+      assert(helpers.start_kong{
         database   = strategy,
         nginx_conf = "/kong-plugin/spec/fixtures/custom_nginx.template",
         plugins = "bundled, " .. PLUGIN_NAME,
-      }))
+      })
     end)
 
     lazy_teardown(function()
