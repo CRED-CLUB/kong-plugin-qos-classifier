@@ -2,6 +2,10 @@ local helpers = require "spec.helpers"
 local cjson = require "cjson"
 
 local PLUGIN_NAME = "qos-classifier"
+local TERMINATE_HOST = "terminate.host"
+local GREEN_HOST = "green.host"
+local ORANGE_HOST = "orange.host"
+local RED_HOST = "red.host"
 
 local config = {
   termination = { 
@@ -57,22 +61,22 @@ for _, strategy in helpers.each_strategy() do
       local service = bp.services:insert()
 
       local route1 = bp.routes:insert {
-        hosts   = {  "test1.com" },
+        hosts   = { TERMINATE_HOST },
         service = service,
       }
 
       local route2 = bp.routes:insert {
-        hosts   = {  "test2.com" },
+        hosts   = { RED_HOST },
         service = service,
       }
 
       local route3 = bp.routes:insert {
-        hosts   = {  "test3.com" },
+        hosts   = { ORANGE_HOST },
         service = service,
       }
 
       local route4 = bp.routes:insert {
-        hosts   = {  "test4.com" },
+        hosts   = { GREEN_HOST },
         service = service,
       }
 
@@ -133,20 +137,20 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check for termination", function()
       local now = ngx.now()
-      make_requests_to_upstream("test1.com", now)
+      make_requests_to_upstream(TERMINATE_HOST, now)
       local client = helpers.proxy_client()
       local res = client:get("/get", {
-        headers = { Host = "test1.com" },
+        headers = { Host = TERMINATE_HOST },
       })
       assert.res_status(302, res)
     end)
 
     it("Check Red Header", function()
       local now = ngx.now()
-      make_requests_to_upstream("test2.com", now)
+      make_requests_to_upstream(RED_HOST, now)
       local client = helpers.proxy_client()
       local res = client:get("/get", {
-        headers = { Host = "test2.com" },
+        headers = { Host = RED_HOST },
       })
       body = assert.res_status(200, res)
       json = cjson.decode(body)
@@ -155,10 +159,10 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check Orange Header", function()
       local now = ngx.now()
-      make_requests_to_upstream("test3.com", now)
+      make_requests_to_upstream(ORANGE_HOST, now)
       local client = helpers.proxy_client()
       local res = client:get("/get", {
-        headers = { Host = "test3.com" },
+        headers = { Host = ORANGE_HOST },
       })
       body = assert.res_status(200, res)
       json = cjson.decode(body)
@@ -167,10 +171,10 @@ for _, strategy in helpers.each_strategy() do
 
     it("Check Green Header", function()
       local now = ngx.now()
-      make_requests_to_upstream("test4.com", now)
+      make_requests_to_upstream(GREEN_HOST, now)
       local client = helpers.proxy_client()
       local res = client:get("/get", {
-        headers = { Host = "test4.com" },
+        headers = { Host = GREEN_HOST },
       })
       body = assert.res_status(200, res)
       json = cjson.decode(body)
