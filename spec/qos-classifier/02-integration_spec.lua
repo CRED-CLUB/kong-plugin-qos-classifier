@@ -127,7 +127,7 @@ for _, strategy in helpers.each_strategy() do
         database   = strategy,
         nginx_conf = "/kong-plugin/spec/fixtures/custom_nginx.template",
         plugins = "bundled, " .. PLUGIN_NAME,
-      }))
+      }, nil, nil, {}))
     end)
 
     lazy_teardown(function()
