@@ -67,7 +67,7 @@ for _, strategy in helpers.each_strategy() do
     local bp, db
   
     setup(function()
-      bp, db = helpers.get_db_utils(strategy, nil, { PLUGIN_NAME })
+      bp, db = helpers.get_db_utils(strategy, {"plugins"}, { PLUGIN_NAME })
       local service = bp.services:insert()
 
       local route1 = bp.routes:insert {
