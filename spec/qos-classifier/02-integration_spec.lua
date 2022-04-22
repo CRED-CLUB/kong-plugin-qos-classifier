@@ -66,7 +66,7 @@ for _, strategy in helpers.each_strategy() do
   describe(PLUGIN_NAME .. ": (integration) [#" .. strategy .. "]", function()
     local bp, db
   
-    lazy_setup(function()
+    setup(function()
       bp, db = helpers.get_db_utils(strategy, nil, { PLUGIN_NAME })
       local service = bp.services:insert()
 
@@ -127,10 +127,10 @@ for _, strategy in helpers.each_strategy() do
         database   = strategy,
         nginx_conf = "/kong-plugin/spec/fixtures/custom_nginx.template",
         plugins = "bundled, " .. PLUGIN_NAME,
-      }, nil, nil, {}))
+      }))
     end)
 
-    lazy_teardown(function()
+    teardown(function()
       helpers.stop_kong()
       assert(db:truncate())
     end)
