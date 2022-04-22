@@ -68,14 +68,6 @@ for _, strategy in helpers.each_strategy() do
   
     setup(function()
       bp, db = helpers.get_db_utils(strategy, {"plugins"}, { PLUGIN_NAME })
-      
-      -- Start kong
-      assert(helpers.start_kong({
-        database   = strategy,
-        nginx_conf = "/kong-plugin/spec/fixtures/custom_nginx.template",
-        plugins = "bundled, " .. PLUGIN_NAME,
-      }))
-      
       local service = bp.services:insert()
 
       local route1 = bp.routes:insert {
@@ -129,6 +121,13 @@ for _, strategy in helpers.each_strategy() do
         route = route4,
         config = config 
       })
+
+      -- Start kong
+      assert(helpers.start_kong({
+        database   = strategy,
+        nginx_conf = "/kong-plugin/spec/fixtures/custom_nginx.template",
+        plugins = "bundled, " .. PLUGIN_NAME,
+      }))
     end)
 
     teardown(function()
