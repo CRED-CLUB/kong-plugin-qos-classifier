@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  KONG_VERSION: 2.6.0
+  KONG_VERSION: 2.0.5
 
 jobs:
   build:
