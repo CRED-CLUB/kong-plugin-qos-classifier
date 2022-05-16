@@ -106,8 +106,8 @@ http {
         error_log  ${{PROXY_ERROR_LOG}} ${{LOG_LEVEL}};
 
 > if proxy_ssl_enabled then
-        ssl_certificate     $(ssl_cert);
-        ssl_certificate_key $(ssl_cert_key);
+        ssl_certificate     ${{SSL_CERT}};
+        ssl_certificate_key  ${{SSL_CERT_KEY}};
         ssl_session_cache   shared:SSL:10m;
         ssl_certificate_by_lua_block {
             Kong.ssl_certificate()
@@ -283,6 +283,26 @@ http {
             set $kong_proxy_mode 'grpc';
 
             grpc_set_header      TE                 $upstream_te;
+            grpc_set_header      Host               $upstream_host;
+            grpc_set_header      X-Forwarded-For    $upstream_x_forwarded_for;
+            grpc_set_header      X-Forwarded-Proto  $upstream_x_forwarded_proto;
+            grpc_set_header      X-Forwarded-Host   $upstream_x_forwarded_host;
+            grpc_set_header      X-Forwarded-Port   $upstream_x_forwarded_port;
+            grpc_set_header      X-Forwarded-Path   $upstream_x_forwarded_path;
+            grpc_set_header      X-Forwarded-Prefix $upstream_x_forwarded_prefix;
+            grpc_set_header      X-Real-IP          $remote_addr;
+            grpc_pass_header     Server;
+            grpc_pass_header     Date;
+            grpc_pass            grpc://kong_upstream;
+        }
+
+        location @grpcs {
+            internal;
+            default_type         '';
+            set $kong_proxy_mode 'grpc';
+
+            grpc_set_header      TE                 $upstream_te;
+            grpc_set_header      Host               $upstream_host;
             grpc_set_header      X-Forwarded-For    $upstream_x_forwarded_for;
             grpc_set_header      X-Forwarded-Proto  $upstream_x_forwarded_proto;
             grpc_set_header      X-Forwarded-Host   $upstream_x_forwarded_host;
@@ -362,8 +382,8 @@ http {
         error_log  ${{ADMIN_ERROR_LOG}} ${{LOG_LEVEL}};
 
 > if admin_ssl_enabled then
-        ssl_certificate     $(admin_ssl_cert);
-        ssl_certificate_key $(admin_ssl_cert_key);
+        ssl_certificate     ${{ADMIN_SSL_CERT}};
+        ssl_certificate_key ${{ADMIN_SSL_CERT_KEY}};
         ssl_session_cache   shared:AdminSSL:10m;
 > end
 
@@ -405,8 +425,8 @@ http {
         error_log  ${{STATUS_ERROR_LOG}} ${{LOG_LEVEL}};
 
 > if status_ssl_enabled then
-        ssl_certificate     $(status_ssl_cert);
-        ssl_certificate_key $(status_ssl_cert_key);
+        ssl_certificate     ${{STATUS_SSL_CERT}};
+        ssl_certificate_key ${{STATUS_SSL_CERT_KEY}};
         ssl_session_cache   shared:StatusSSL:1m;
 > end
 
@@ -444,8 +464,7 @@ http {
         listen $(entry.listener) ssl;
 > end
 
-        access_log ${{ADMIN_ACCESS_LOG}};
-        error_log  ${{ADMIN_ERROR_LOG}} ${{LOG_LEVEL}};
+        access_log off;
 
         ssl_verify_client   optional_no_ca;
         ssl_certificate     ${{CLUSTER_CERT}};
@@ -472,15 +491,14 @@ http {
     }
 > end -- role == "control_plane"
 
-> if role ~= "data_plane" then
     server {
         server_name mock_upstream;
 
         listen 15555;
         listen 15556 ssl;
 
-        ssl_certificate     $(ssl_cert);
-        ssl_certificate_key $(ssl_cert_key);
+        ssl_certificate ${{SSL_CERT}};
+        ssl_certificate_key ${{SSL_CERT_KEY}};
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
         set_real_ip_from 127.0.0.1;
@@ -721,7 +739,6 @@ http {
             }
         }
     }
-> end -- role ~= "data_plane"
 
     include '*.http_mock';
 }
@@ -800,31 +817,23 @@ stream {
 # non-SSL listeners, and the SSL terminator
     server {
 > for _, entry in ipairs(stream_listeners) do
-> if not entry.ssl then
         listen $(entry.listener);
 > end
-> end
 
-> if stream_proxy_ssl_enabled then
-        listen unix:${{PREFIX}}/stream_tls_terminate.sock ssl proxy_protocol;
-> end
-
-        access_log ${{PROXY_STREAM_ACCESS_LOG}};
-        error_log ${{PROXY_STREAM_ERROR_LOG}} ${{LOG_LEVEL}};
+        access_log ${{PROXY_ACCESS_LOG}};
+        error_log ${{PROXY_ERROR_LOG}} ${{LOG_LEVEL}};
 
 > for _, ip in ipairs(trusted_ips) do
         set_real_ip_from $(ip);
 > end
-        set_real_ip_from unix:;
-
     # injected nginx_sproxy_* directives
 > for _, el in ipairs(nginx_sproxy_directives) do
         $(el.name) $(el.value);
 > end
 
 > if stream_proxy_ssl_enabled then
-        ssl_certificate     $(ssl_cert);
-        ssl_certificate_key $(ssl_cert_key);
+        ssl_certificate     ${{SSL_CERT}};
+        ssl_certificate_key ${{SSL_CERT_KEY}};
         ssl_session_cache   shared:StreamSSL:10m;
         ssl_certificate_by_lua_block {
             Kong.ssl_certificate()
@@ -848,70 +857,6 @@ stream {
         }
     }
 
-> if stream_proxy_ssl_enabled then
-# SSL listeners, but only preread the handshake here
-    server {
-> for _, entry in ipairs(stream_listeners) do
-> if entry.ssl then
-        listen $(entry.listener:gsub(" ssl", ""));
-> end
-> end
-
-        access_log ${{PROXY_STREAM_ACCESS_LOG}};
-        error_log ${{PROXY_STREAM_ERROR_LOG}} ${{LOG_LEVEL}};
-
-> for _, ip in ipairs(trusted_ips) do
-        set_real_ip_from $(ip);
-> end
-
-        # injected nginx_sproxy_* directives
-> for _, el in ipairs(nginx_sproxy_directives) do
-        $(el.name) $(el.value);
-> end
-
-        preread_by_lua_block {
-            Kong.preread()
-        }
-
-        ssl_preread on;
-
-        proxy_protocol on;
-
-        set $kong_tls_preread_block 1;
-        set $kong_tls_preread_block_upstream '';
-        proxy_pass $kong_tls_preread_block_upstream;
-    }
-
-server {
-        listen unix:${{PREFIX}}/stream_tls_passthrough.sock proxy_protocol;
-
-        access_log ${{PROXY_STREAM_ACCESS_LOG}};
-        error_log ${{PROXY_STREAM_ERROR_LOG}} ${{LOG_LEVEL}};
-
-        set_real_ip_from unix:;
-
-    # injected nginx_sproxy_* directives
-> for _, el in ipairs(nginx_sproxy_directives) do
-        $(el.name) $(el.value);
-> end
-
-        preread_by_lua_block {
-            Kong.preread()
-        }
-
-        ssl_preread on;
-
-        set $kong_tls_passthrough_block 1;
-
-        proxy_pass kong_upstream;
-
-        log_by_lua_block {
-            Kong.log()
-        }
-    }
-> end -- stream_proxy_ssl_enabled
-
-
 > if database == "off" then
     server {
         listen unix:${{PREFIX}}/stream_config.sock;
@@ -930,8 +875,8 @@ server {
         listen 15558 ssl;
         listen 15557 udp;
 
-        ssl_certificate     $(ssl_cert);
-        ssl_certificate_key $(ssl_cert_key);
+        ssl_certificate ${{SSL_CERT}};
+        ssl_certificate_key ${{SSL_CERT_KEY}};
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
         content_by_lua_block {
@@ -948,14 +893,5 @@ server {
     }
 
     include '*.stream_mock';
-
-    server {        # ignore (and close }, to ignore content)
-        listen unix:${{PREFIX}}/stream_rpc.sock;
-        error_log  ${{ADMIN_ERROR_LOG}} ${{LOG_LEVEL}};
-        content_by_lua_block {
-            Kong.stream_api()
-        }
-    }
-
 }
 > end

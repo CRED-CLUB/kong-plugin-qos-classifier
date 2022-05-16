@@ -66,8 +66,8 @@ for _, strategy in helpers.each_strategy() do
   describe(PLUGIN_NAME .. ": (integration) [#" .. strategy .. "]", function()
     local bp, db
   
-    lazy_setup(function()
-      bp, db = helpers.get_db_utils(strategy, nil, { PLUGIN_NAME })
+    setup(function()
+      bp, db = helpers.get_db_utils(strategy, {"plugins"}, { PLUGIN_NAME })
       local service = bp.services:insert()
 
       local route1 = bp.routes:insert {
@@ -130,7 +130,7 @@ for _, strategy in helpers.each_strategy() do
       }))
     end)
 
-    lazy_teardown(function()
+    teardown(function()
       helpers.stop_kong()
       assert(db:truncate())
     end)
