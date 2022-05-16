@@ -23,7 +23,12 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build 
-        run: |
-          git clone https://github.com/Kong/kong-pongo.git ../kong-pongo
-          cd ../kong-pongo && git reset --hard 19ee5c20c1c68510430f637cae8bfa43836ab810 && cd "$OLDPWD"
-          ../kong-pongo/pongo.sh clean && ../kong-pongo/pongo.sh up && ../kong-pongo/pongo.sh build && ../kong-pongo/pongo.sh run
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_on: error
+          command: |
+            git clone https://github.com/Kong/kong-pongo.git ../kong-pongo
+            cd ../kong-pongo && git reset --hard 19ee5c20c1c68510430f637cae8bfa43836ab810 && cd "$OLDPWD"
+            ../kong-pongo/pongo.sh clean && ../kong-pongo/pongo.sh up && ../kong-pongo/pongo.sh build && ../kong-pongo/pongo.sh run
