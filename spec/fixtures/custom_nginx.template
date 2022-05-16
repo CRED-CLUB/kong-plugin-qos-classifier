@@ -1,4 +1,4 @@
-# This is a custom nginx configuration template for Kong specs
+# This is a custom nginx configuration template for Kong specs added specifically by hand 
 
 pid pids/nginx.pid; # mandatory even for custom config templates
 error_log ${{PROXY_ERROR_LOG}} ${{LOG_LEVEL}};

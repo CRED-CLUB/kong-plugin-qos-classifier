@@ -7,6 +7,25 @@ local GREEN_HOST = "green.host"
 local ORANGE_HOST = "orange.host"
 local RED_HOST = "red.host"
 
+
+-- see if the file exists
+local function file_exists(file)
+  local f = io.open(file, "rb")
+  if f then f:close() end
+  return f ~= nil
+end
+
+-- get all lines from a file, returns an empty 
+-- list/table if the file does not exist
+local function lines_from(file)
+  if not file_exists(file) then return {} end
+  local lines = {}
+  for line in io.lines(file) do 
+    lines[#lines + 1] = line
+  end
+  return lines
+end
+
 local config = {
   termination = { 
       status_code = 302,
@@ -121,11 +140,20 @@ for _, strategy in helpers.each_strategy() do
         route = route4,
         config = config 
       })
+      
 
+      local file = "/kong-plugin/spec/fixtures/custom_nginx.template"
+      local lines = lines_from(file)
+      print("--------------------------------------------------------------------------------")
+      for k,v in pairs(lines) do
+        print('line[' .. k .. ']', v)
+        break
+      end
+      print("--------------------------------------------------------------------------------")
       -- Start kong
       assert(helpers.start_kong({
         database   = strategy,
-        nginx_conf = "/kong-plugin/spec/fixtures/custom_nginx.template",
+        nginx_conf = file,
         plugins = "bundled, " .. PLUGIN_NAME,
       }))
     end)
