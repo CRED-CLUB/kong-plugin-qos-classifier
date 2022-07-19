@@ -1,4 +1,6 @@
 # 🚦 kong-plugin-qos-classifier
+[![CI Tests](https://github.com/CRED-CLUB/kong-plugin-qos-classifier/workflows/CI%20Tests/badge.svg)](https://github.com/CRED-CLUB/kong-plugin-qos-classifier/actions/workflows/CI_tests.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## What is QoS?
 
