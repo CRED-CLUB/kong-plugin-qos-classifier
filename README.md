@@ -12,7 +12,7 @@ This is a custom kong plugin which can classify requests into configured QoS cla
 
 ## Use-cases of the plugin
 
-This plugin can help in progressive and pro-active load shedding, at flow level, whenever unexpected spikes in traffic are seen. This is discussed in detail in this [blog](https://engineering.cred.club/qos-through-progressive-load-shedding-during-high-scale-events-part-1-9ab2282c0040)
+This plugin can help in progressive and pro-active load shedding, at flow level, whenever unexpected spikes in traffic are seen. This is discussed in detail in [part 1](https://engineering.cred.club/qos-through-progressive-load-shedding-during-high-scale-events-part-1-9ab2282c0040) and [part 2](https://engineering.cred.club/qos-through-progressive-load-shedding-during-high-scale-events-part-2-8e44dea863df) series of blogs.
 
 ## Features of the plugin
 
