@@ -46,13 +46,19 @@ function _M.execute(plugin_conf, num_nodes)
   local curr_time = ngx.now()
 
   -- get the weighted request count in the window
-  local req_count = window:get_usage(curr_time, scope)
+  local req_count = window:get_usage(plugin_conf, curr_time, scope)
 
   -- get the value of the header as defined for this class of request
   -- also check if the request breaches all limits and should be throttled
   local header_value, should_terminate, class_threshold = get_class(
                                                             plugin_conf.classes,
                                                             req_count, num_nodes)
+
+  -- set current QoS value, to be used in response header to client
+  kong.ctx.plugin.qos_value = header_value
+
+  -- increment the counter
+  window:incr(curr_time, scope)
 
   -- Set prometheus metrics 
   if prometheus then
@@ -74,8 +80,6 @@ function _M.execute(plugin_conf, num_nodes)
     kong.response.exit(plugin_conf.termination.status_code)
   end
 
-  -- increment the counter
-  window:incr(curr_time, scope)
   -- the request is still under defined limits
   -- set the appropriate class in the header to be passed to the upstream
   set_header(plugin_conf.upstream_header_name, header_value)

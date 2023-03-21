@@ -43,13 +43,18 @@ function _M:init_worker(sync_interval)
   return self
 end
 
-function _M:get_usage(curr_time, scope)
+function _M:get_usage(plugin_conf, curr_time, scope)
   local rounded_off_time = math.floor(curr_time)
 
-  local key = cache_key(scope, rounded_off_time - 1)
+  -- it may take upto 1s for counters to sync, hence
+  local key = cache_key(scope, rounded_off_time - 2)
 
   local value, err = self._counter:get(key)
   if not value or value == 0 then return 0 end
+
+  if plugin_conf.strategy and plugin_conf.strategy == "blanket" then
+    return value
+  end
 
   return ((curr_time - rounded_off_time) * value)
 end

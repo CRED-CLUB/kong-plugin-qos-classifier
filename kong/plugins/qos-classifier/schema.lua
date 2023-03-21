@@ -16,6 +16,17 @@ local schema = {
         fields = {
           {upstream_header_name = {type = "string", default = 'X-QOS-CLASS'}},
           {
+            send_header_in_response_to_client = {
+              type = "boolean",
+              default = false
+            }
+          }, {
+            strategy = {
+              type = "string",
+              default = "bucket",
+              one_of = {"bucket", "blanket"}
+            }
+          }, {
             classes = {
               type = "record",
               fields = {

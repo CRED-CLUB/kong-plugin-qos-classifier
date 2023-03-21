@@ -34,4 +34,11 @@ function QOSClassifierHandler:access(config)
   access.execute(config, num_nodes)
 end
 
+function QOSClassifierHandler:response(config)
+  if config.send_header_in_response_to_client then
+    kong.response.set_header(config.upstream_header_name,
+                             kong.ctx.plugin.qos_value)
+  end
+end
+
 return QOSClassifierHandler
